@@ -6,6 +6,24 @@ pub enum DataValue {
     List(ListType),
 }
 
+impl DataValue {
+    pub fn infer_value(input: &str) -> Self {
+        DataValue::String(input.to_string())
+    }
+}
+
+impl From<String> for DataValue {
+    fn from(value: String) -> Self {
+        DataValue::String(value)
+    }
+}
+
+impl From<ListType> for DataValue {
+    fn from(value: ListType) -> Self {
+        DataValue::List(value)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ListType {
     U8(Vec<u8>),
@@ -21,74 +39,68 @@ pub enum ListType {
     Strings(Vec<String>),
 }
 
-impl From<String> for DataValue {
-    fn from(s: String) -> Self {
-        DataValue::String(s)
-    }
-}
-
 impl From<Vec<u8>> for ListType {
-    fn from(s: Vec<u8>) -> Self {
-        ListType::U8(s)
+    fn from(value: Vec<u8>) -> Self {
+        ListType::U8(value)
     }
 }
 
 impl From<Vec<u16>> for ListType {
-    fn from(s: Vec<u16>) -> Self {
-        ListType::U16(s)
+    fn from(value: Vec<u16>) -> Self {
+        ListType::U16(value)
     }
 }
 
 impl From<Vec<u32>> for ListType {
-    fn from(s: Vec<u32>) -> Self {
-        ListType::U32(s)
+    fn from(value: Vec<u32>) -> Self {
+        ListType::U32(value)
     }
 }
 
 impl From<Vec<u64>> for ListType {
-    fn from(s: Vec<u64>) -> Self {
-        ListType::U64(s)
+    fn from(value: Vec<u64>) -> Self {
+        ListType::U64(value)
     }
 }
 
 impl From<Vec<u128>> for ListType {
-    fn from(s: Vec<u128>) -> Self {
-        ListType::U128(s)
+    fn from(value: Vec<u128>) -> Self {
+        ListType::U128(value)
     }
 }
 
 impl From<Vec<i8>> for ListType {
-    fn from(s: Vec<i8>) -> Self {
-        ListType::I8(s)
+    fn from(value: Vec<i8>) -> Self {
+        ListType::I8(value)
     }
 }
 
 impl From<Vec<i16>> for ListType {
-    fn from(s: Vec<i16>) -> Self {
-        ListType::I16(s)
+    fn from(value: Vec<i16>) -> Self {
+        ListType::I16(value)
     }
 }
 
 impl From<Vec<i32>> for ListType {
-    fn from(s: Vec<i32>) -> Self {
-        ListType::I32(s)
+    fn from(value: Vec<i32>) -> Self {
+        ListType::I32(value)
     }
 }
 
 impl From<Vec<i64>> for ListType {
-    fn from(s: Vec<i64>) -> Self {
-        ListType::I64(s)
+    fn from(value: Vec<i64>) -> Self {
+        ListType::I64(value)
     }
 }
 
 impl From<Vec<i128>> for ListType {
-    fn from(s: Vec<i128>) -> Self {
-        ListType::I128(s)
+    fn from(value: Vec<i128>) -> Self {
+        ListType::I128(value)
     }
 }
 
 impl From<Vec<String>> for ListType {
-    fn from(s: Vec<String>) -> Self {
-        ListType::Strings(s)
+    fn from(value: Vec<String>) -> Self {
+        ListType::Strings(value)
     }
 }
