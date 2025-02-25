@@ -5,7 +5,7 @@ use std::sync::{
 
 use dashmap::DashMap;
 
-use crate::DataValue;
+use super::data_value::DataValue;
 
 /// Struct Gerenciadora do Cache.
 ///
