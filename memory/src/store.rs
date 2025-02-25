@@ -5,7 +5,7 @@ use std::sync::{
 
 use dashmap::DashMap;
 
-use super::data_value::DataValue;
+use super::cache_value::CacheValue;
 
 /// Struct Gerenciadora do Cache.
 ///
@@ -22,7 +22,7 @@ pub struct Store {
     length: AtomicU64,
     /// Cache em memoria usando DashMap para uma abordagem mais limpa
     /// enquanto mantem Safe Thread e imutabilidade local.
-    memory_map: Arc<DashMap<String, DataValue>>,
+    memory_map: Arc<DashMap<String, CacheValue>>,
 }
 
 impl Store {
@@ -43,12 +43,12 @@ impl Store {
     /// O mapa ira criar um guard protegendo a referencia ate o fim dessa função,
     /// o clone irá garantir que receberemos uma copia do valor valida enquanto o
     /// guard é dropado.
-    pub fn find(&self, key: &str) -> Option<DataValue> {
+    pub fn find(&self, key: &str) -> Option<CacheValue> {
         self.memory_map.get(key).map(|guard| guard.value().clone())
     }
 
     /// Insere um novo valor no cache enquanto aumenta o tamanho de length.
-    pub fn insert(&self, key: &str, value: DataValue) {
+    pub fn insert(&self, key: &str, value: CacheValue) {
         self.memory_map.insert(key.to_string(), value);
         self.length.fetch_add(1, Ordering::AcqRel);
     }
@@ -76,7 +76,7 @@ mod tests {
         let store = Store::new();
 
         let key = "test_key";
-        let value: DataValue = "value".to_string().into();
+        let value: CacheValue = CacheValue::new("value");
 
         store.insert(key, value.clone());
         let finded = store.find(key);
