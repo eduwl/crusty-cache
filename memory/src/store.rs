@@ -48,8 +48,8 @@ impl Store {
     }
 
     /// Insere um novo valor no cache enquanto aumenta o tamanho de length.
-    pub fn insert(&self, key: &str, value: CacheValue) {
-        self.memory_map.insert(key.to_string(), value);
+    pub fn insert(&self, key: String, value: CacheValue) {
+        self.memory_map.insert(key, value);
         self.length.fetch_add(1, Ordering::AcqRel);
     }
 
@@ -69,6 +69,8 @@ impl Store {
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
+
     use super::*;
 
     #[test]
@@ -76,11 +78,109 @@ mod tests {
         let store = Store::new();
 
         let key = "test_key";
-        let value: CacheValue = CacheValue::new("value");
+        let value = CacheValue::new("value");
 
-        store.insert(key, value.clone());
-        let finded = store.find(key);
+        store.insert(key.to_string(), value.clone());
+        let hit = store.find(key).unwrap();
 
-        assert!(matches!(finded, Some(f) if f == value))
+        // Same value as CacheValue
+        assert_eq!(hit, value);
+
+        // Same raw bytes
+        assert_eq!("value".as_bytes(), hit.as_bytes());
+    }
+
+    #[test]
+    fn test_multi_inserts() {
+        let store = Arc::new(Store::new());
+
+        // Set Data
+        thread::scope(|s| {
+            let mut tasks = vec![];
+            for i in 0..100 {
+                let store = store.clone();
+                let task = s.spawn(move || {
+                    let value = CacheValue::new(format!("value-{i}"));
+                    store.insert(format!("key-{}", i), value);
+                });
+                tasks.push(task);
+            }
+
+            for task in tasks {
+                let _ = task.join();
+            }
+        });
+
+        for i in 0..100 {
+            let key = format!("key-{}", i);
+            let string_value = format!("value-{}", i);
+            let value = CacheValue::new(string_value.clone());
+
+            let hit = store.find(&key).unwrap();
+
+            // Same value as CacheValue
+            assert_eq!(hit, value);
+
+            // Same raw bytes
+            assert_eq!(string_value.as_bytes(), hit.as_bytes());
+        }
+    }
+
+    #[test]
+    fn test_delete() {
+        let store = Arc::new(Store::new());
+
+        let inserted = 100;
+        // Set Data
+        thread::scope(|s| {
+            let mut tasks = vec![];
+            for i in 0..inserted {
+                let store = store.clone();
+                let task = s.spawn(move || {
+                    let value = CacheValue::new(format!("value-{i}"));
+                    store.insert(format!("key-{}", i), value);
+                });
+                tasks.push(task);
+            }
+
+            for task in tasks {
+                let _ = task.join();
+            }
+        });
+
+        let removed = 10;
+        for i in 0..removed {
+            let key = format!("key-{}", i);
+            store.delete(&key);
+        }
+
+        assert_eq!((inserted - removed), store.len())
+    }
+
+    #[test]
+    fn test_cleanup_cache() {
+        let store = Arc::new(Store::new());
+
+        let inserted = 100;
+        // Set Data
+        thread::scope(|s| {
+            let mut tasks = vec![];
+            for i in 0..inserted {
+                let store = store.clone();
+                let task = s.spawn(move || {
+                    let value = CacheValue::new(format!("value-{i}"));
+                    store.insert(format!("key-{}", i), value);
+                });
+                tasks.push(task);
+            }
+
+            for task in tasks {
+                let _ = task.join();
+            }
+        });
+
+        store.clear();
+
+        assert_eq!(0, store.len())
     }
 }
