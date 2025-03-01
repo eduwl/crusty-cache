@@ -43,12 +43,12 @@ impl Store {
     /// O mapa ira criar um guard protegendo a referencia ate o fim dessa função,
     /// o clone irá garantir que receberemos uma copia do valor valida enquanto o
     /// guard é dropado.
-    pub fn find(&self, key: &str) -> Option<CacheValue> {
+    pub fn get(&self, key: &str) -> Option<CacheValue> {
         self.memory_map.get(key).map(|guard| guard.value().clone())
     }
 
     /// Insere um novo valor no cache enquanto aumenta o tamanho de length.
-    pub fn insert(&self, key: String, value: CacheValue) {
+    pub fn set(&self, key: String, value: CacheValue) {
         self.memory_map.insert(key, value);
         self.length.fetch_add(1, Ordering::AcqRel);
     }
@@ -80,8 +80,8 @@ mod tests {
         let key = "test_key";
         let value = CacheValue::new("value");
 
-        store.insert(key.to_string(), value.clone());
-        let hit = store.find(key).unwrap();
+        store.set(key.to_string(), value.clone());
+        let hit = store.get(key).unwrap();
 
         // Same value as CacheValue
         assert_eq!(hit, value);
@@ -101,7 +101,7 @@ mod tests {
                 let store = store.clone();
                 let task = s.spawn(move || {
                     let value = CacheValue::new(format!("value-{i}"));
-                    store.insert(format!("key-{}", i), value);
+                    store.set(format!("key-{}", i), value);
                 });
                 tasks.push(task);
             }
@@ -116,7 +116,7 @@ mod tests {
             let string_value = format!("value-{}", i);
             let value = CacheValue::new(string_value.clone());
 
-            let hit = store.find(&key).unwrap();
+            let hit = store.get(&key).unwrap();
 
             // Same value as CacheValue
             assert_eq!(hit, value);
@@ -138,7 +138,7 @@ mod tests {
                 let store = store.clone();
                 let task = s.spawn(move || {
                     let value = CacheValue::new(format!("value-{i}"));
-                    store.insert(format!("key-{}", i), value);
+                    store.set(format!("key-{}", i), value);
                 });
                 tasks.push(task);
             }
@@ -169,7 +169,7 @@ mod tests {
                 let store = store.clone();
                 let task = s.spawn(move || {
                     let value = CacheValue::new(format!("value-{i}"));
-                    store.insert(format!("key-{}", i), value);
+                    store.set(format!("key-{}", i), value);
                 });
                 tasks.push(task);
             }
