@@ -33,11 +33,11 @@ impl CacheTTLControl {
     }
 
     pub async fn cleanup_expired(&self) -> Option<Vec<String>> {
-        let now_tmestamp = Local::now().timestamp();
+        let now_timestamp = Local::now().timestamp();
         let mut items_guard = self.items.write().await;
 
         let expired_keys: Vec<String> = items_guard
-            .range(..now_tmestamp)
+            .range(..now_timestamp)
             .map(|(_, key)| key.to_owned())
             .collect();
 
@@ -56,8 +56,6 @@ impl CacheTTLControl {
 
 #[cfg(test)]
 mod test {
-    use std::{thread::sleep, time::Duration as TDuration};
-
     use chrono::{DateTime, Duration, Local};
 
     use super::CacheTTLControl;
@@ -92,18 +90,32 @@ mod test {
 
     #[tokio::test]
     async fn test_cleanup_expired() {
-        let _200ms = future_point_in_milis(200);
-        let _300ms = future_point_in_milis(300);
-        let _10sec = future_point_in_seconds(1);
+        let _200ms = future_point_in_seconds(-1);
+        let _300ms = future_point_in_seconds(-2);
+        let _10sec = future_point_in_seconds(10);
 
         let ctc = CacheTTLControl::new();
         ctc.set(_200ms, "value200ms".to_owned()).await;
-        ctc.set(_300ms, "value300ms".to_owned()).await;
-        ctc.set(_10sec, "value1s".to_owned()).await;
+        assert_eq!(ctc.len(), 1, "Should have a len of 1 after setting");
 
-        sleep(TDuration::from_secs(1));
+        ctc.set(_300ms, "value300ms".to_owned()).await;
+        assert_eq!(ctc.len(), 2, "Should have a len of 1 after setting");
+
+        ctc.set(_10sec, "value1s".to_owned()).await;
+        assert_eq!(ctc.len(), 3, "Should have a len of 1 after setting");
 
         let expired_keys = ctc.cleanup_expired().await;
-        assert_ne!(expired_keys, None, "Should have a len of 2 expired keys");
+        assert_ne!(expired_keys, None, "Should not be None");
+
+        let expired_keys_unwrapped = expired_keys.unwrap();
+        assert!(
+            &expired_keys_unwrapped.len().eq(&2usize),
+            "Should have a len of 2 expired keys"
+        );
+
+        assert!(
+            !expired_keys_unwrapped.iter().any(|k| k.eq("value1s")),
+            "Should not contain value1s"
+        );
     }
 }
