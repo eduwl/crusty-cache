@@ -7,5 +7,9 @@
     "after_delay": {
       "milliseconds": 500
     }
+  },
+  "centered_layout": {
+    "left_padding": 0.2,
+    "right_padding": 0.2
   }
 }

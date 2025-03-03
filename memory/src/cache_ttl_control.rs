@@ -5,8 +5,23 @@ use std::{
 };
 use tokio::sync::RwLock;
 
+/// Struct do controle do tempo de vida.
+///
+/// Aqui é onde o tempo de vida é controlado, o mapa contem de forma ordenada
+/// os itens mais antigos ao mais novo, o controle é feito separado para não
+/// interferir no cache principal e evitar locks prolongados.
+///
+/// Separando o controle de tempo de vida do cache principal podemos verificar
+/// e invalidar valores do cache principal com mais frequencia sem afetar a performance
+/// do cache principal utilizado pelos usuarios.
+///
+/// #Fields:
+/// - `length`: AtomicU64 - Contador de itens no cache
+/// - `items`: RwLock<BTreeMap<i64, String>> - Mapa ordenado com o tempo de vida
 pub struct CacheTTLControl {
+    /// Mostra o tamanho atual do mapa retornando o numero de itens.
     length: AtomicU64,
+    /// Mapa ordenado pelo tempo de vida junto a key usada no cache principal.
     items: RwLock<BTreeMap<i64, String>>,
 }
 
@@ -18,10 +33,12 @@ impl CacheTTLControl {
         }
     }
 
+    /// Retorna o o tamanho atual do mapa.
     pub fn len(&self) -> u64 {
         self.length.load(Ordering::Acquire)
     }
 
+    /// Insere um novo item no mapa contendo o timestamp e a key que esta sendo armazenada no cache principal.
     pub async fn set(&self, timestamp: i64, store_key: String) -> Option<String> {
         let mut items_guard = self.items.write().await;
         let updated = items_guard.insert(timestamp, store_key.to_owned());
@@ -32,6 +49,13 @@ impl CacheTTLControl {
         }
     }
 
+    /// Limpeza ativa do mapa.
+    ///
+    /// Limpa ativamente os timestamps expirados comparando com o timestamp atual.
+    /// Todo timestamp que estiver incluso no range ate o ponto atual é
+    /// mapeado para um vetor e removido do mapa  de controle do tempo de vida.
+    ///
+    /// Retorna um vetor com as chaves expiradas.
     pub async fn cleanup_expired(&self) -> Option<Vec<String>> {
         let now_timestamp = Local::now().timestamp();
         let mut items_guard = self.items.write().await;
