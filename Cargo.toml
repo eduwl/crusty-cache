@@ -28,6 +28,7 @@ strip = true
 [dependencies]
 chrono = { version = "0.4.40" }
 dashmap = { version = "6.1.0", features = ["serde"] }
+futures-util = { version = "0.3.31" }
 serde = { version = "1.0.218", features = ["derive"] }
 serde_json = { version = "1.0.139" }
 tokio = { version = "1.41.1", features = ["full"] }
