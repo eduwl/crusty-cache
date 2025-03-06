@@ -15,9 +15,6 @@ use tokio::sync::RwLock;
 /// e invalidar valores do cache principal com mais frequencia sem afetar a performance
 /// do cache principal utilizado pelos usuarios.
 ///
-/// #Fields:
-/// - `length`: AtomicU64 - Contador de itens no cache
-/// - `items`: RwLock<BTreeMap<i64, String>> - Mapa ordenado com o tempo de vida
 pub struct CacheTTLControl {
     /// Mostra o tamanho atual do mapa retornando o numero de itens.
     length: AtomicU64,

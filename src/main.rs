@@ -1,5 +1,6 @@
-use memory::*;
+mod memory;
 
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() {
+    // Your code here
 }

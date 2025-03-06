@@ -14,12 +14,9 @@ check-workspace:
 	@echo "Check Workspace..."
 	@cargo check --workspace
 
-CRATES=$(shell sed -n '/^\[workspace\]/,/^\[/{/members = /p}' Cargo.toml | sed 's/members = \[\(.*\)\]/\1/' | tr -d '",')
 doc:
-	@for crate in $(CRATES); do \
-		echo "Gerando documentação para $$crate"; \
-		cargo doc -p $$crate --no-deps; \
-	done
+	echo "Gerando documentação...";
+	cargo doc --no-deps;
 
 # ================================================================================ #
 #                                 Cargo Build DEV                                  #

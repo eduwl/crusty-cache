@@ -1,6 +1,6 @@
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
     Arc,
+    atomic::{AtomicU64, Ordering},
 };
 
 use dashmap::DashMap;
@@ -12,11 +12,6 @@ use super::cache_value::CacheValue;
 /// Esse é o ponto principal da existencia dos dados no cache
 /// e sera acessado globalmente pelo serviço.
 ///
-/// # Fields
-/// ```
-/// length: AtomicU64
-/// memory_map: Arc<DashMap<String, DataValue>>
-/// ```
 pub struct Store {
     /// Mostra o tamanho do cache atualmente retornando o numero de itens.
     length: AtomicU64,
