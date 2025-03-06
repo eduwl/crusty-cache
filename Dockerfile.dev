@@ -1,0 +1,29 @@
+FROM alpine:latest
+
+# Instala dependências necessárias
+RUN apk add --no-cache \
+    cargo \
+    musl-dev \
+    git \
+    bash \
+    zsh \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Cria um usuário não-root chamado "eduardo" para segurança
+RUN adduser -D eduardo && mkdir -p /home/eduardo/.oh-my-zsh && chown -R eduardo /home/eduardo
+
+# Instala o Oh My Zsh para um terminal mais amigável
+USER eduardo
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+
+# Define o ambiente do usuário
+WORKDIR /home/eduardo/crusty-cache
+RUN chown -R eduardo /home/eduardo/crusty-cache
+
+SHELL ["/usr/bin/zsh", "-c"]
+
+# Exponha a porta SSH
+EXPOSE 22
+
+# Mantém o container rodando
+CMD ["zsh"]
