@@ -1,4 +1,5 @@
 mod memory;
+mod replication;
 mod socket;
 
 #[tokio::main]
