@@ -1,39 +1,6 @@
-use std::{
-    net::{SocketAddr, SocketAddrV4},
-    str::FromStr,
-};
+use std::net::SocketAddr;
 
-use super::ReplicationError;
-
-#[derive(Debug)]
-pub enum NodeMode {
-    Master,
-    Slave,
-}
-
-impl TryFrom<String> for NodeMode {
-    type Error = ReplicationError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        match value.as_str() {
-            "master" => Ok(NodeMode::Master),
-            "slave" => Ok(NodeMode::Slave),
-            _ => Err(ReplicationError::ParseError(
-                "invalid replica mode".to_string(),
-            )),
-        }
-    }
-}
-
-impl NodeMode {
-    pub fn is_master(&self) -> bool {
-        matches!(self, NodeMode::Master)
-    }
-
-    pub fn is_slave(&self) -> bool {
-        matches!(self, NodeMode::Slave)
-    }
-}
+use super::{NodeMode, ReplicationError};
 
 #[derive(Debug)]
 pub struct Node {
@@ -42,10 +9,8 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(mode: String, ip: String, port: u64) -> Result<Self, ReplicationError> {
-        let mode = NodeMode::try_from(mode)?;
-        let ipaddr = SocketAddr::from_str(format!("{}:{}", ip, port).as_str())?;
-        Ok(Self { mode, ipaddr })
+    pub fn new(mode: NodeMode, ipaddr: SocketAddr) -> Self {
+        Self { mode, ipaddr }
     }
 
     pub fn promote(&mut self, mode: String) -> Result<(), ReplicationError> {
@@ -68,12 +33,19 @@ impl Node {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
     fn test_create_node_slave() {
-        let node = Node::new("slave".into(), "127.0.0.1".into(), 8081)
-            .expect("Must create node without errors");
+        let node_mode =
+            NodeMode::try_from("slave".to_owned()).expect("NodeMode must be master or slave");
+
+        let ipaddr = SocketAddr::from_str(format!("127.0.0.1:{}", 8081).as_str())
+            .expect("IpAddr failed to parse");
+
+        let node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_slave(), "Must be a slave node");
         assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
@@ -81,8 +53,13 @@ mod tests {
 
     #[test]
     fn test_create_node_master() {
-        let node = Node::new("master".into(), "127.0.0.1".into(), 8081)
-            .expect("Must create node without errors");
+        let node_mode =
+            NodeMode::try_from("master".to_owned()).expect("NodeMode must be master or slave");
+
+        let ipaddr = SocketAddr::from_str(format!("127.0.0.1:{}", 8081).as_str())
+            .expect("IpAddr failed to parse");
+
+        let node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_master(), "Must be a master node");
         assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
@@ -90,8 +67,13 @@ mod tests {
 
     #[test]
     fn test_promote_node() {
-        let mut node = Node::new("slave".into(), "127.0.0.1".into(), 8081)
-            .expect("Must create node without errors");
+        let node_mode =
+            NodeMode::try_from("slave".to_owned()).expect("NodeMode must be master or slave");
+
+        let ipaddr = SocketAddr::from_str(format!("127.0.0.1:{}", 8081).as_str())
+            .expect("IpAddr failed to parse");
+
+        let mut node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_slave(), "Must be a slave node");
         assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
