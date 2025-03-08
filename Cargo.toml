@@ -26,6 +26,7 @@ panic = "abort"
 strip = true
 
 [dependencies]
+clap = { version = "4.5.31", features = ["derive"]}
 chrono = { version = "0.4.40" }
 dashmap = { version = "6.1.0", features = ["serde"] }
 dotenvy = { version = "0.15.0" }
