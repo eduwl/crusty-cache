@@ -1,2 +1,10 @@
+use std::sync::Arc;
 
-pub struct Server{}
+use super::{Replica, ReplicationError};
+
+
+pub async fn start(replica: Arc<Replica>) -> Result<(), ReplicationError> {
+    
+    
+    Ok(())
+}

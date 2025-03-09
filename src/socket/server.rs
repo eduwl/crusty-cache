@@ -1,12 +1,18 @@
+use std::sync::Arc;
+
 use futures_util::{SinkExt, StreamExt};
 use tokio::{net::TcpListener, sync::mpsc};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 
-use super::{Commands, Responses, SocketError};
+use super::{Commands, Replica, Responses, SocketError};
 
-pub async fn start() -> Result<(), SocketError> {
-    let listener = TcpListener::bind("127.0.0.1:8080").await?;
-    println!("Listening on: 8080");
+pub async fn start(replica: Arc<Replica>) -> Result<(), SocketError> {
+    let listener = TcpListener::bind(replica.node.ipaddr()).await?;
+    println!(
+        "Listening on: {:?} as {:?}",
+        replica.node.ipaddr().port(),
+        replica.node.mode
+    );
 
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(async move {
@@ -54,17 +60,30 @@ mod tests {
     use super::*;
     use tokio_tungstenite::connect_async;
 
-    use crate::socket::start;
+    use crate::{
+        replication::{Node, NodeMode},
+        socket::start,
+    };
+
+    fn create_node() -> Node {
+        let mode = NodeMode::try_from("master".to_string()).unwrap();
+        let ipaddr = format!("{}:{}", "127.0.0.1", 8080).parse().unwrap();
+        Node::new(mode, ipaddr)
+    }
 
     #[tokio::test]
     async fn test_server() {
-        tokio::spawn(async {
-            let _ = start().await;
+        let node = create_node();
+        let replica = Arc::new(Replica::new(node));
+
+        let replica_clone = replica.clone();
+        tokio::spawn(async move {
+            let _ = start(replica_clone).await;
         });
         tokio::time::sleep(tokio::time::Duration::from_millis(250)).await;
 
         // Conectar ao servidor WebSocket
-        let url = "ws://127.0.0.1:8080";
+        let url = format!("ws://{}", replica.node.ipaddr());
         let (mut ws_stream, _) = connect_async(url).await.expect("Failed to connect");
 
         let command = serde_json::to_string(&Commands::Test("Hello".into()))

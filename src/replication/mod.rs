@@ -10,17 +10,31 @@ pub use server::*;
 
 use std::fmt::Display;
 
+pub fn create_node() -> Result<Node, ReplicationError> {
+    let args = INIT_ARGS.get().unwrap();
+    let mode = NodeMode::try_from(args.mode.clone())?;
+    let ipaddr = format!("{}:{}", args.master_ip, args.port).parse()?;
+    Ok(Node::new(mode, ipaddr))
+}
+
 #[derive(Debug)]
 pub enum ReplicationError {
     AddrParseError(String),
     Register(String),
     ParseError(String),
+    Tokio(tokio::io::Error),
     Unregister(String),
 }
 
 impl From<std::net::AddrParseError> for ReplicationError {
     fn from(err: std::net::AddrParseError) -> Self {
         ReplicationError::AddrParseError(err.to_string())
+    }
+}
+
+impl From<tokio::io::Error> for ReplicationError {
+    fn from(err: tokio::io::Error) -> Self {
+        ReplicationError::Tokio(err)
     }
 }
 
@@ -32,6 +46,7 @@ impl std::fmt::Display for ReplicationError {
             ReplicationError::AddrParseError(msg) => write!(f, "Address parse error: {}", msg),
             ReplicationError::Register(msg) => write!(f, "Register error: {}", msg),
             ReplicationError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            ReplicationError::Tokio(msg) => write!(f, "Tokio error: {}", msg),
             ReplicationError::Unregister(msg) => write!(f, "Unregister error: {}", msg),
         }
     }

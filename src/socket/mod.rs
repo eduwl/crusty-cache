@@ -6,6 +6,8 @@ use commands::*;
 use responses::*;
 pub use server::*;
 
+use crate::replication::{Replica, ReplicationError};
+
 use std::fmt::Display;
 
 #[derive(Debug)]

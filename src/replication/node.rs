@@ -4,7 +4,7 @@ use super::{NodeMode, ReplicationError};
 
 #[derive(Debug)]
 pub struct Node {
-    mode: NodeMode,
+    pub mode: NodeMode,
     ipaddr: SocketAddr,
 }
 
