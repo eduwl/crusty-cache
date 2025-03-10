@@ -5,21 +5,21 @@ use super::{NodeMode, ReplicationError};
 #[derive(Debug)]
 pub struct Node {
     pub mode: NodeMode,
-    socket_ipaddr: SocketAddr,
+    master_ipaddr: SocketAddr,
 }
 
 impl Node {
     pub fn new(mode: NodeMode, ipaddr: SocketAddr) -> Self {
         Self {
             mode,
-            socket_ipaddr: ipaddr,
+            master_ipaddr: ipaddr,
         }
     }
 
     pub fn promote(&mut self, mode: String) -> Result<(), ReplicationError> {
         self.mode = NodeMode::try_from(mode)?;
         let default_port = env::var("CR_SERVICE_PORT").unwrap_or_else(|_| "50000".to_string());
-        self.socket_ipaddr = format!("127.0.0.1:{}", default_port).parse()?;
+        self.master_ipaddr = format!("127.0.0.1:{}", default_port).parse()?;
 
         Ok(())
     }
@@ -32,8 +32,8 @@ impl Node {
         self.mode.is_slave()
     }
 
-    pub fn ipaddr(&self) -> &SocketAddr {
-        &self.socket_ipaddr
+    pub fn master_ipaddr(&self) -> &SocketAddr {
+        &self.master_ipaddr
     }
 }
 
@@ -54,7 +54,11 @@ mod tests {
         let node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_slave(), "Must be a slave node");
-        assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
+        assert_eq!(
+            node.master_ipaddr().port(),
+            8081,
+            "Node port does not match"
+        );
     }
 
     #[test]
@@ -68,7 +72,11 @@ mod tests {
         let node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_master(), "Must be a master node");
-        assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
+        assert_eq!(
+            node.master_ipaddr().port(),
+            8081,
+            "Node port does not match"
+        );
     }
 
     #[test]
@@ -82,11 +90,19 @@ mod tests {
         let mut node = Node::new(node_mode, ipaddr);
 
         assert!(node.is_slave(), "Must be a slave node");
-        assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
+        assert_eq!(
+            node.master_ipaddr().port(),
+            8081,
+            "Node port does not match"
+        );
 
         node.promote("master".into())
             .expect("Must promote node without errors");
         assert!(node.is_master(), "Must be a master node");
-        assert_eq!(node.ipaddr().port(), 8081, "Node port does not match");
+        assert_eq!(
+            node.master_ipaddr().port(),
+            8081,
+            "Node port does not match"
+        );
     }
 }

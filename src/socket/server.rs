@@ -11,7 +11,7 @@ pub async fn start(replica: Arc<Replica>) -> Result<(), SocketError> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", default_port)).await?;
     println!(
         "Serviço de CACHE iniciado: {} - {}",
-        replica.node.ipaddr(),
+        replica.node.master_ipaddr(),
         replica.node.mode
     );
 
@@ -84,7 +84,7 @@ mod tests {
         tokio::time::sleep(tokio::time::Duration::from_millis(250)).await;
 
         // Conectar ao servidor WebSocket
-        let url = format!("ws://{}", replica.node.ipaddr());
+        let url = format!("ws://{}", replica.node.master_ipaddr());
         let (mut ws_stream, _) = connect_async(url).await.expect("Failed to connect");
 
         let command = serde_json::to_string(&Commands::Test("Hello".into()))

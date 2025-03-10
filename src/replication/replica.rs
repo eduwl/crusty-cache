@@ -26,13 +26,16 @@ impl Replica {
         }
     }
 
-    pub async fn relicas_length(&self) -> u16 {
+    pub async fn replicas_length(&self) -> u16 {
         self.replicas_length.load(Ordering::Acquire)
     }
 
     pub async fn register_node(&self, node: Node) -> bool {
         let mut rn_guard = self.replica_nodes.write().await;
-        if rn_guard.insert(node.ipaddr().clone(), node).is_some() {
+        if rn_guard
+            .insert(node.master_ipaddr().clone(), node)
+            .is_some()
+        {
             return false;
         }
         self.replicas_length.fetch_add(1, Ordering::AcqRel);
@@ -76,7 +79,7 @@ mod tests {
 
         assert_eq!(result, true, "Should return true when inserting a new node");
         assert_eq!(
-            replica_master.relicas_length().await,
+            replica_master.replicas_length().await,
             1,
             "Replica length should be 1"
         );
@@ -88,11 +91,11 @@ mod tests {
         let replica_master = Replica::new(node_master);
 
         let node_slave = build_node("slave", "127.0.0.1", 8001);
-        let slave_addr = node_slave.ipaddr().clone();
+        let slave_addr = node_slave.master_ipaddr().clone();
         replica_master.register_node(node_slave).await;
 
         assert_eq!(
-            replica_master.relicas_length().await,
+            replica_master.replicas_length().await,
             1,
             "Replica length should be 1"
         );
@@ -101,7 +104,7 @@ mod tests {
 
         assert_eq!(result, true, "Should return true when removing a node");
         assert_eq!(
-            replica_master.relicas_length().await,
+            replica_master.replicas_length().await,
             0,
             "Replica length should be 0"
         );

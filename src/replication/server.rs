@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::{net::TcpListener, sync::mpsc};
@@ -7,7 +7,9 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 use super::{Replica, ReplicationError};
 
 pub async fn start(replica: Arc<Replica>) -> Result<(), ReplicationError> {
-    let ipadrr: SocketAddr = format!("{:?}:5555", replica.node.ipaddr().ip()).parse()?;
+    let default_port =
+        env::var("CR_REPLICATION_MASTER_PORT").unwrap_or_else(|_| "5555".to_string());
+    let ipadrr: SocketAddr = format!("127.0.0.1:{}", default_port).parse()?;
     let listener = TcpListener::bind(ipadrr).await?;
     println!("Serviço de replicação iniciado: {:?}", ipadrr);
 
