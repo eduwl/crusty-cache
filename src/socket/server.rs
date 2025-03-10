@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::{net::TcpListener, sync::mpsc};
@@ -7,7 +7,8 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 use super::{Commands, Replica, Responses, SocketError};
 
 pub async fn start(replica: Arc<Replica>) -> Result<(), SocketError> {
-    let listener = TcpListener::bind(replica.node.ipaddr()).await?;
+    let default_port = env::var("CR_SERVICE_PORT").unwrap_or_else(|_| "50000".to_string());
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", default_port)).await?;
     println!(
         "Serviço de CACHE iniciado: {} - {}",
         replica.node.ipaddr(),
