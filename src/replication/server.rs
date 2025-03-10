@@ -6,12 +6,12 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 use super::{Replica, ReplicationError};
 
-pub async fn start(replica: Arc<Replica>) -> Result<(), ReplicationError> {
-    let default_port =
-        env::var("CR_REPLICATION_MASTER_PORT").unwrap_or_else(|_| "5555".to_string());
-    let ipadrr: SocketAddr = format!("127.0.0.1:{}", default_port).parse()?;
-    let listener = TcpListener::bind(ipadrr).await?;
-    println!("Serviço de replicação iniciado: {:?}", ipadrr);
+pub async fn start_server(
+    replica: Arc<Replica>,
+    ipaddr: SocketAddr,
+) -> Result<(), ReplicationError> {
+    let listener = TcpListener::bind(ipaddr).await?;
+    println!("Serviço de replicação iniciado: {:?}", ipaddr);
 
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(async move {

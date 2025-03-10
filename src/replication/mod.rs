@@ -8,7 +8,9 @@ pub use node::*;
 pub use replica::*;
 pub use server::*;
 
-use std::fmt::Display;
+use tokio::task::JoinHandle;
+
+use std::{env, fmt::Display, net::SocketAddr, sync::Arc};
 
 pub fn create_node() -> Result<Node, ReplicationError> {
     let args = INIT_ARGS.get().unwrap();
@@ -23,6 +25,35 @@ pub fn create_node() -> Result<Node, ReplicationError> {
             return Ok(Node::new(mode, ipaddr));
         }
     }
+}
+
+pub async fn start_replication_tasks(
+    replica: Arc<Replica>,
+) -> Result<Vec<JoinHandle<()>>, ReplicationError> {
+    let mut tasks = Vec::new();
+
+    let replication_port = env::var("CR_REPLICATION_PORT").unwrap_or_else(|_| "5555".to_string());
+
+    // Replicação sempre sera ligado ao localhost mesmo sendo um slave
+    // Depois melhorar o entendimento e a coesão entre as classes.
+    let localhost_with: SocketAddr = format!("127.0.0.1:{}", replication_port).parse()?;
+    let replica_task = replica.clone();
+    let rp_server_task = tokio::spawn(async move {
+        if start_server(replica_task, localhost_with).await.is_err() {
+            eprintln!("Failed to start replication server");
+        }
+    });
+
+    tasks.push(rp_server_task);
+    if replica.node.is_master() {
+        println!("A conexão cliente para a replicação sera ignorada quando o nó for master");
+        return Ok(tasks);
+    }
+
+    // Replicação como cliente do slave para o servidor master somente sera
+    // iniciado se a replica tiver um nó slave.
+
+    Ok(tasks)
 }
 
 #[derive(Debug)]
