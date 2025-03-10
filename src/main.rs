@@ -42,7 +42,7 @@ fn init_node() {
 
 async fn start_replication_thread(replica: Arc<Replica>) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async {
-        if let Err(e) = socket::start(replica).await {
+        if let Err(e) = replication::start(replica).await {
             eprintln!("Falha ao iniciar o serviço de replicação: {}", e);
             process::exit(1);
         }

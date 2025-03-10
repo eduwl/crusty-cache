@@ -9,8 +9,8 @@ use super::{Commands, Replica, Responses, SocketError};
 pub async fn start(replica: Arc<Replica>) -> Result<(), SocketError> {
     let listener = TcpListener::bind(replica.node.ipaddr()).await?;
     println!(
-        "Listening on: {:?} as {:?}",
-        replica.node.ipaddr().port(),
+        "Serviço de CACHE iniciado: {} - {}",
+        replica.node.ipaddr(),
         replica.node.mode
     );
 

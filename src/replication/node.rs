@@ -1,20 +1,26 @@
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 
 use super::{NodeMode, ReplicationError};
 
 #[derive(Debug)]
 pub struct Node {
     pub mode: NodeMode,
-    ipaddr: SocketAddr,
+    socket_ipaddr: SocketAddr,
 }
 
 impl Node {
     pub fn new(mode: NodeMode, ipaddr: SocketAddr) -> Self {
-        Self { mode, ipaddr }
+        Self {
+            mode,
+            socket_ipaddr: ipaddr,
+        }
     }
 
     pub fn promote(&mut self, mode: String) -> Result<(), ReplicationError> {
         self.mode = NodeMode::try_from(mode)?;
+        let default_port = env::var("CR_SERVICE_PORT").unwrap_or_else(|_| "50000".to_string());
+        self.socket_ipaddr = format!("127.0.0.1:{}", default_port).parse()?;
+
         Ok(())
     }
 
@@ -27,7 +33,7 @@ impl Node {
     }
 
     pub fn ipaddr(&self) -> &SocketAddr {
-        &self.ipaddr
+        &self.socket_ipaddr
     }
 }
 

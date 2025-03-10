@@ -13,8 +13,16 @@ use std::fmt::Display;
 pub fn create_node() -> Result<Node, ReplicationError> {
     let args = INIT_ARGS.get().unwrap();
     let mode = NodeMode::try_from(args.mode.clone())?;
-    let ipaddr = format!("{}:{}", args.master_ip, args.port).parse()?;
-    Ok(Node::new(mode, ipaddr))
+    match mode {
+        NodeMode::Master => {
+            let ipaddr = "127.0.0.1:50000".parse()?;
+            return Ok(Node::new(mode, ipaddr));
+        }
+        NodeMode::Slave => {
+            let ipaddr = format!("{}:{}", args.master_ip, args.port).parse()?;
+            return Ok(Node::new(mode, ipaddr));
+        }
+    }
 }
 
 #[derive(Debug)]
